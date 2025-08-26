@@ -22,14 +22,11 @@ const Login = () => {
     setError('');
 
     try {
-      // Bypass actual API call for development - always succeed
-      // await authAPI.login(formData);
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API delay
+      await authAPI.login(formData);
       login();
       navigate('/dashboard');
     } catch (err: any) {
-      // This won't be reached since we're bypassing the API call
-      setError('Login failed. Please check your credentials.');
+      setError(err.response?.data?.detail || 'Login failed. Please check your credentials.');
     } finally {
       setLoading(false);
     }
