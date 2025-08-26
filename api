@@ -1,0 +1,98 @@
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
+from typing import List
+from main import run_email_system  # استيراد الدالة من main.py
+from schedule_handler import load_schedule, save_schedule
+from exchangelib import Credentials, Account, Configuration, DELEGATE
+from exchangelib.protocol import BaseProtocol, NoVerifyHTTPAdapter
+from zoneinfo import ZoneInfo
+import re
+
+app = FastAPI(title="SFDA Email System API")
+
+# --------------------
+# Models
+# --------------------
+class LoginRequest(BaseModel):
+    username: str
+    password: str
+    email: str
+    ews_url: str
+
+class ScheduleUpdate(BaseModel):
+    schedule: List[dict]
+
+# --------------------
+# Global state (logged-in account)
+# --------------------
+account_cache = {}  # Stores account object after login
+
+# --------------------
+# Login endpoint
+# --------------------
+@app.post("/api/login")
+def login(req: LoginRequest):
+    try:
+        BaseProtocol.HTTP_ADAPTER_CLS = NoVerifyHTTPAdapter
+        credentials = Credentials(req.username, req.password)
+        config = Configuration(credentials=credentials, service_endpoint=req.ews_url)
+        account = Account(req.email, config=config, autodiscover=False, access_type=DELEGATE)
+        timezone = ZoneInfo("Asia/Riyadh")
+        account_cache["account"] = account
+        account_cache["timezone"] = timezone
+
+        # Optionally run main email system after login
+        # run_email_system(req.username, req.password, req.email, req.ews_url)
+
+        return {"status": "success", "message": "Login successful."}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+# --------------------
+# Get folders and emails
+# --------------------
+@app.get("/api/emails")
+def get_emails(folder_name: str = "Inbox"):
+    account = account_cache.get("account")
+    if not account:
+        raise HTTPException(status_code=400, detail="Not logged in")
+
+    try:
+        folder = None
+        for f in account.inbox.parent.walk():
+            if f.name.lower() == folder_name.lower():
+                folder = f
+                break
+        if not folder:
+            raise HTTPException(status_code=404, detail=f"Folder '{folder_name}' not found")
+
+        emails = []
+        for item in folder.all()[:50]:  # latest 50 emails
+            emails.append({
+                "subject": item.subject,
+                "sender": item.sender.email_address if item.sender else "",
+                "datetime_received": str(item.datetime_received),
+                "is_read": item.is_read
+            })
+        return {"status": "success", "emails": emails}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+# --------------------
+# Get schedule
+# --------------------
+@app.get("/api/schedule")
+def get_schedule():
+    schedule = load_schedule()
+    return {"status": "success", "schedule": schedule}
+
+# --------------------
+# Update schedule
+# --------------------
+@app.post("/api/schedule")
+def update_schedule(update: ScheduleUpdate):
+    try:
+        save_schedule(update.schedule)
+        return {"status": "success", "message": "Schedule updated successfully."}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
