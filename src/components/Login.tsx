@@ -19,9 +19,6 @@ const Login = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setError('');
-
-    try {
       await authAPI.login(formData);
       login();
       navigate('/dashboard');

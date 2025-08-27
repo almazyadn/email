@@ -38,29 +38,6 @@ const Schedule = () => {
     try {
       const response = await scheduleAPI.getSchedule();
       setSchedule(response.schedule || []);
-    } catch (err: any) {
-      setError('Failed to fetch schedule data.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSave = async () => {
-    setSaving(true);
-    setError('');
-    setSuccess('');
-    try {
-      await scheduleAPI.updateSchedule(schedule);
-      setSuccess('Schedule updated successfully!');
-      setTimeout(() => setSuccess(''), 3000);
-    } catch (err: any) {
-      setError('Failed to save schedule changes.');
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const addRow = () => {
     const newItem: ScheduleItem = {
       Email: '',
       Department: '',

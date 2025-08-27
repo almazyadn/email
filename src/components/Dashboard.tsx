@@ -43,23 +43,6 @@ const Dashboard = () => {
     try {
       const response = await emailAPI.getEmails(selectedFolder);
       setEmails(response.emails || []);
-    } catch (err: any) {
-      setError('Failed to fetch emails. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
-  };
-
-  const filteredEmails = emails.filter(email =>
-    email.subject.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    email.sender.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
   const formatDateTime = (dateStr: string) => {
     try {
       const date = new Date(dateStr);
