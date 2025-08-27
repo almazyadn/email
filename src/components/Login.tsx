@@ -19,6 +19,7 @@ const Login = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    try {
       await authAPI.login(formData);
       login();
       navigate('/dashboard');
