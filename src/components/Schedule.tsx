@@ -28,6 +28,7 @@ const Schedule = () => {
     '11pm-7am',
     '10am-6pm'
   ];
+
   useEffect(() => {
     fetchSchedule();
   }, []);
@@ -38,6 +39,28 @@ const Schedule = () => {
     try {
       const response = await scheduleAPI.getSchedule();
       setSchedule(response.schedule || []);
+    } catch (err) {
+      setError('Failed to fetch schedule');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSave = async () => {
+    setSaving(true);
+    setError('');
+    setSuccess('');
+    try {
+      await scheduleAPI.updateSchedule(schedule);
+      setSuccess('Schedule saved successfully!');
+    } catch (err) {
+      setError('Failed to save schedule');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const addRow = () => {
     const newItem: ScheduleItem = {
       Email: '',
       Department: '',
