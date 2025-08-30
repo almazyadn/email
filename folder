@@ -1,0 +1,10 @@
+top_folder = None
+for f in account.root.children:
+    if f.name.lower() == "top of information store":
+        top_folder = f
+        break
+
+if top_folder:
+    print("Folders under Top of Information Store:")
+    for sub in top_folder.children:
+        print("-", sub.name)
